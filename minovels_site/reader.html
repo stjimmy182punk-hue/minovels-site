@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lector</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark">
+  <header class="site-header">
+    <a href="/">← Volver</a>
+    <div id="meta"></div>
+  </header>
+
+  <main id="reader">
+    <article id="chapter">Cargando...</article>
+
+    <div class="reader-controls">
+      <button id="prev">Anterior</button>
+      <select id="chapters"></select>
+      <button id="next">Siguiente</button>
+      <a id="download" download>Descargar</a>
+    </div>
+  </main>
+
+  <script>
+    async function q(name){ return new URLSearchParams(location.search).get(name); }
+    (async ()=>{
+      const id = await q('novel') || 'sample';
+      const chapter = parseInt(q('chapter')||'1');
+      const meta = await fetch(`novels/${id}/meta.json`).then(r=>r.json());
+      document.getElementById('meta').textContent = meta.title + " — " + meta.author;
+      const chapters = meta.chapters;
+      const sel = document.getElementById('chapters');
+      chapters.forEach((c,i)=> sel.append(new Option(c.title, i+1)));
+      sel.value = chapter;
+      async function loadChap(n){
+        const text = await fetch(`novels/${id}/ch${n}.html`).then(r=>r.text());
+        document.getElementById('chapter').innerHTML = text;
+        document.getElementById('download').href = `novels/${id}/ch${n}.html`;
+      }
+      document.getElementById('prev').onclick = ()=> loadChap(Math.max(1, sel.value-1));
+      document.getElementById('next').onclick = ()=> loadChap(Math.min(chapters.length, (+sel.value)+1));
+      sel.onchange = ()=> loadChap(sel.value);
+      await loadChap(chapter);
+    })();
+  </script>
+</body>
+</html>
